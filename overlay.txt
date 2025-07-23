@@ -1,0 +1,4 @@
+Team: Haas
+Drivers: Andreas & Naudu
+Position: 5
+Average Place: 9.40
