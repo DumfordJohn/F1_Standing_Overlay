@@ -4,6 +4,7 @@ import tkinter as tk
 from tkinter import messagebox
 import threading
 import time
+import os
 
 search_name = ""
 stop_event = threading.Event()
@@ -32,8 +33,9 @@ def update_overlay():
                 position = cells[0].get_text(strip=True)
                 team = cells[1].get_text(strip=True)
                 avgPlace = cells[3].get_text(strip=True)
+                safe_path = os.path.join(os.path.expanduser("~"), "Documents", "overlay.txt")
 
-                with open("overlay.txt", "w", encoding="utf-8") as f:
+                with open(safe_path, "w", encoding="utf-8") as f:
                     f.write(f"Team: {team}\n")
                     f.write(f"Drivers: {driver}\n")
                     f.write(f"Position: {position}\n")
@@ -61,7 +63,7 @@ def start_search():
 
 def auto_update_loop():
     while not stop_event.is_set():
-        time.sleep(15)
+        time.sleep(300)
         update_overlay()
 
 def on_quit():
