@@ -9,9 +9,16 @@ import os
 search_name = ""
 stop_event = threading.Event()
 
+def ordinal(n):
+    n = int(n)
+    if 10 <= n % 100 <=20:
+        suffix = "th"
+    else:
+        suffix = {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
+    return f"{n}{suffix}"
+
 def update_overlay():
     global search_name
-
     if not search_name:
         return
 
@@ -31,21 +38,41 @@ def update_overlay():
             driver = cells[2].get_text(strip=True)
             if search_name in driver.lower():
                 position = cells[0].get_text(strip=True)
+                position_with_suffix = ordinal(position)
                 team = cells[1].get_text(strip=True)
                 avgPlace = cells[3].get_text(strip=True)
-                safe_path = os.path.join(os.path.expanduser("~"), "Documents", "overlay.txt")
 
-                with open(safe_path, "w", encoding="utf-8") as f:
-                    f.write(f"Team: {team}\n")
-                    f.write(f"Drivers: {driver}\n")
-                    f.write(f"Position: {position}\n")
-                    f.write(f"Average place: {avgPlace}\n")
+                context = {
+                    "team": team,
+                    "driver": driver,
+                    "position": position_with_suffix,
+                    "avgPlace": avgPlace
+                }
+
+                raw_template = layout_text.get("1.0", tk.END).strip()
+
+                if not show_team.get():
+                    raw_template = raw_template.replace("{team}", "")
+                if not show_driver.get():
+                    raw_template = raw_template.replace("{driver}", "")
+                if not show_position.get():
+                    raw_template = raw_template.replace("{position}", "")
+                if not show_avgPlace.get():
+                    raw_template = raw_template.replace("{avgPlace}", "")
+
+                output = raw_template.format(**context)
+
+                output_path = "overlay.txt"
+
+                with open(output_path, "w", encoding="utf-8") as f:
+                    f.write(output.strip())
 
                 result_label.config(
-                    text=f"Found: {driver}\nTeam: {team} | Position: {position} | Average place: {avgPlace}"
+                    text=f"Found: {driver}\nSaved to: {output_path}"
                 )
                 found = True
                 break
+
         if not found:
             result_label.config(text=f"'{search_name}' not found")
     except Exception as e:
@@ -82,6 +109,21 @@ entry = tk.Entry(root, font=("Segoe UI", 12), width=30)
 entry.pack(pady=5)
 
 tk.Button(root, text="Search", font=("Segoe UI", 10), command=start_search).pack(pady=10)
+
+tk.Label(root, text="Select fields to include:", font=("Segoe UI", 11)).pack(pady=4)
+show_team = tk.BooleanVar(value=True)
+show_driver = tk.BooleanVar(value=True)
+show_position = tk.BooleanVar(value=True)
+show_avgPlace = tk.BooleanVar(value=True)
+tk.Checkbutton(root, text="Team", variable=show_team, font=("Segoe UI", 10)).pack(anchor='w', padx=40)
+tk.Checkbutton(root, text="Driver", variable=show_driver, font=("Segoe UI", 10)).pack(anchor='w', padx=40)
+tk.Checkbutton(root, text="Position", variable=show_position, font=("Segoe UI", 10)).pack(anchor='w', padx=40)
+tk.Checkbutton(root, text="Average Place", variable=show_avgPlace, font=("Segoe UI", 10)).pack(anchor='w', padx=40)
+
+layout_text = tk.Text(root, height=4, width=50, font=("Segoe UI", 10))
+layout_text.insert("1.0", "{team} | {driver} | {position} | {avgPlace}")
+layout_text.pack()
+
 result_label = tk.Label(root, text="", font=("Segoe UI", 10), wraplength=400, justify="left")
 result_label.pack(pady=10)
 
